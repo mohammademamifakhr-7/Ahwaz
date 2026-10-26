@@ -3,6 +3,13 @@
 > An open-ended neuro-evolution sandbox. No scripts. Only energy, mutation
 > and natural selection.
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-Proprietary-red)
+![Language](https://img.shields.io/badge/language-JavaScript-yellow)
+![Platform](https://img.shields.io/badge/platform-Web-lightgrey)
+
+**Live demo:** https://mohammademamifakhr-7.github.io/Ahwaz/
+
 _Ahwaz_ is a browser-based artificial-life simulator. It begins with a hundred
 identical digital bacteria, each carrying nothing but a small neural network
 and two slots for biological traits. There is no food scripted into the world,
@@ -27,6 +34,7 @@ simple fact that the cells which survive are the ones that reproduce.
 - [Roadmap](#roadmap)
 - [Inspirations](#inspirations)
 - [License](#license)
+- [Author](#author)
 
 ---
 
@@ -98,7 +106,9 @@ Requires a modern browser (Chrome, Edge, Firefox, Safari 16+).
 
 | Action              | How                                      |
 | ------------------- | ---------------------------------------- |
-| Inspect a cell      | Click any cell in the world              |
+| Inspect a cell      | Click or tap any cell in the world       |
+| Pan the camera      | Drag with one finger or the left mouse   |
+| Zoom                | Mouse wheel, or pinch with two fingers   |
 | Pause / Resume      | Play button in the Settings tab          |
 | Change speed        | 1× / 2× / 4× / 8× buttons                |
 | Reset the world     | Settings tab → Reset World               |
@@ -203,8 +213,8 @@ Everything that moves energy does so across that boundary:
 - **Fission** transfers 45 % to each child, 10 % to the pool.
 - **Conjugation** transfers roughly a third of each parent's energy to the
   child.
-- **Density pressure** can kill a cell; that cell's energy becomes a corpse
-  or returns to the pool.
+- **Density pressure** can kill a cell; that cell's leftover energy is split
+  between a corpse and the pool.
 
 You can verify this at any moment from the console:
 
@@ -225,6 +235,8 @@ ahwaz/
 ├── style.css
 ├── README.md
 ├── CHANGELOG.md
+├── LICENSE
+├── package.json
 ├── .gitignore
 └── src/
     ├── main.js                 bootstrap and main loop
@@ -346,7 +358,24 @@ ideas from a small set of well-known projects, each for one specific reason:
 
 ## License
 
-Proprietary. All rights reserved.
+**Proprietary — All rights reserved.**
 
-This repository is private and not licensed for redistribution. See
-`LICENSE` for details.
+Copyright © 2026 Mohammad Emami Fakhr.
+
+This repository is made publicly viewable **for demonstration and evaluation
+purposes only**. No license is granted for reuse, modification, distribution,
+or commercial use of any part of the source code, documentation, or assets.
+See [`LICENSE`](LICENSE) for the full terms.
+
+If you would like to use Ahwaz in your own project, please contact the author.
+
+---
+
+## Author
+
+**Mohammad Emami Fakhr**
+
+- GitHub: [@mohammademamifakhr-7](https://github.com/mohammademamifakhr-7)
+- Live demo: [mohammademamifakhr-7.github.io/Ahwaz](https://mohammademamifakhr-7.github.io/Ahwaz/)
+
+Version 1.0.0 — 2026.
