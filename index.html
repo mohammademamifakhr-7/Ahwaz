@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080b10">
+  <title>EvoGenesis — Emergent Evolution Sandbox</title>
+  <meta name="description"
+    content="Watch autonomous digital bacteria discover photosynthesis, hunting, cooperation and complex strategies. No scripts, only energy, mutation and natural selection.">
+  <meta name="keywords" content="artificial life, evolution simulator, neuroevolution, emergence, biology">
+  <meta property="og:title" content="EvoGenesis — Emergent Evolution Sandbox">
+  <meta property="og:description"
+    content="Autonomous bacteria evolving in a closed-energy world. No scripts. Only survival.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2314b8a6'/%3E%3Ccircle cx='22' cy='26' r='6' fill='%23080b10'/%3E%3Ccircle cx='42' cy='36' r='4' fill='%23080b10'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="app">
+    <main id="stage">
+      <canvas id="world-canvas" aria-label="Ecosystem canvas"></canvas>
+
+      <div id="hud" role="status">
+        <div class="hud-item"><span class="hud-label">Seed</span><span class="hud-value" id="hud-seed">—</span></div>
+        <div class="hud-item"><span class="hud-label">FPS</span><span class="hud-value" id="hud-fps">60</span></div>
+        <div class="hud-item"><span class="hud-label">Zoom</span><span class="hud-value" id="hud-zoom">100%</span></div>
+        <div class="hud-item"><span class="hud-label">Time</span><span class="hud-value" id="hud-time">00:00:00</span>
+        </div>
+      </div>
+
+      <button id="btn-fit-screen" class="hud-button hud-button-2" title="Fit to Screen" aria-label="Fit to screen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4" />
+        </svg>
+      </button>
+      <button id="btn-fullscreen" class="hud-button" title="Fullscreen" aria-label="Toggle fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+        </svg>
+      </button>
+
+      <div id="panel-toggle" role="button" aria-label="Toggle panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </div>
+    </main>
+
+    <aside id="panel" role="complementary">
+      <header class="panel-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14" fill="url(#g1)" />
+              <circle cx="11" cy="12" r="3" fill="#080b10" />
+              <circle cx="21" cy="18" r="2" fill="#080b10" />
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32">
+                  <stop offset="0" stop-color="#14b8a6" />
+                  <stop offset="1" stop-color="#10b981" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>EvoGenesis</h1>
+            <p class="subtitle">v1.0 · Emergent evolution</p>
+          </div>
+        </div>
+      </header>
+
+      <nav class="top-tabs" role="tablist">
+        <button class="top-tab active" data-tab="settings" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v6m0 6v6m4.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 4.2l-4.2-4.2m-6 0L4.8 16.2" />
+          </svg>
+          <span>World</span>
+        </button>
+        <button class="top-tab" data-tab="species" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 3v18M3 12h18" />
+          </svg>
+          <span>Species</span>
+        </button>
+      </nav>
+
+      <div class="tab-content active" data-tab-content="settings">
+        <section class="panel-section">
+          <h2 class="section-title">Live Stats</h2>
+          <div class="stats-grid">
+            <div class="stat"><span class="stat-label">Cells</span><b class="stat-value" id="stat-cells">0</b></div>
+            <div class="stat"><span class="stat-label">Species</span><b class="stat-value" id="stat-species">0</b></div>
+            <div class="stat"><span class="stat-label">Time</span><b class="stat-value" id="stat-time">00:00:00</b>
+            </div>
+            <div class="stat"><span class="stat-label">Corpses</span><b class="stat-value" id="stat-corpses">0</b></div>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2 class="section-title">Energy Budget</h2>
+          <div class="energy-total">
+            <span class="energy-total-label">Total (conserved)</span>
+            <span class="energy-total-value" id="energy-total">0</span>
+          </div>
+          <div class="energy-bar">
+            <div class="energy-bar-seg seg-pool" id="energy-bar-pool"></div>
+            <div class="energy-bar-seg seg-cells" id="energy-bar-cells"></div>
+            <div class="energy-bar-seg seg-corpses" id="energy-bar-corpses"></div>
+          </div>
+          <div class="energy-legend">
+            <div class="energy-item"><span class="energy-dot dot-pool"></span><span class="energy-name">Pool</span><span
+                class="energy-pct" id="energy-pct-pool">0%</span><span class="energy-abs" id="energy-abs-pool">0</span>
+            </div>
+            <div class="energy-item"><span class="energy-dot dot-cells"></span><span
+                class="energy-name">Cells</span><span class="energy-pct" id="energy-pct-cells">0%</span><span
+                class="energy-abs" id="energy-abs-cells">0</span></div>
+            <div class="energy-item"><span class="energy-dot dot-corpses"></span><span
+                class="energy-name">Corpses</span><span class="energy-pct" id="energy-pct-corpses">0%</span><span
+                class="energy-abs" id="energy-abs-corpses">0</span></div>
+          </div>
+          <canvas id="chart-canvas" class="chart-canvas"></canvas>
+        </section>
+
+        <details class="settings-group" open>
+          <summary><span>Life & Energy</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M6 9l6 6 6-6" />
+            </svg></summary>
+          <div class="sliders" data-group="life"></div>
+        </details>
+
+        <details class="settings-group">
+          <summary><span>Zones (independent of reset)</span><svg class="chevron" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6" />
+            </svg></summary>
+          <div class="sliders" data-group="zones"></div>
+          <button class="btn btn-outline btn-block" id="btn-regen-zones"
+            style="margin: 12px 20px 0; width: calc(100% - 40px);">Regenerate Zones</button>
+        </details>
+
+        <details class="settings-group">
+          <summary><span>Reproduction</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M6 9l6 6 6-6" />
+            </svg></summary>
+          <div class="sliders" data-group="reproduction"></div>
+        </details>
+
+        <details class="settings-group">
+          <summary><span>Mutation</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M6 9l6 6 6-6" />
+            </svg></summary>
+          <div class="sliders" data-group="mutation"></div>
+        </details>
+
+        <div class="panel-actions">
+          <button class="btn btn-speed active" id="btn-speed-1">1×</button>
+          <button class="btn btn-speed" id="btn-speed-2">2×</button>
+          <button class="btn btn-speed" id="btn-speed-4">4×</button>
+          <button class="btn btn-speed" id="btn-speed-8">8×</button>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" id="btn-play">⏸ Pause</button>
+          <button class="btn btn-danger" id="btn-reset-world">Reset World</button>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-outline btn-block" id="btn-save-now">💾 Save</button>
+          <button class="btn btn-outline btn-block" id="btn-reset-settings">Reset Settings</button>
+        </div>
+      </div>
+
+      <div class="tab-content" data-tab-content="species">
+        <nav class="sub-tabs">
+          <button class="sub-tab active" data-subtab="inspector">Inspector</button>
+          <button class="sub-tab" data-subtab="gene-bank">Gene Bank</button>
+          <button class="sub-tab" data-subtab="tree">Tree</button>
+        </nav>
+        <div class="sub-content active" data-subtab-content="inspector">
+          <div class="empty-state" id="inspector-empty">Click a cell in the world to inspect</div>
+          <section id="inspector-section" class="hidden">
+            <div class="inspector-header">
+              <div class="section-title" id="inspector-title">Inspector</div>
+              <button class="btn btn-icon" id="btn-close-inspector" aria-label="Close">✕</button>
+            </div>
+            <div id="inspector-content"></div>
+          </section>
+        </div>
+        <div class="sub-content" data-subtab-content="gene-bank">
+          <div id="gene-bank-container"></div>
+        </div>
+        <div class="sub-content" data-subtab-content="tree">
+          <canvas id="tree-canvas" class="tree-canvas"></canvas>
+          <p class="hint">Click a node to inspect that species</p>
+        </div>
+      </div>
+
+      <footer class="panel-footer">
+        <span>EvoGenesis v1.0 — closed-economy neuro-evolution</span>
+      </footer>
+    </aside>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+
+</html>

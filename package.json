@@ -1,0 +1,43 @@
+{
+  "name": "ahwaz",
+  "version": "1.0.0",
+  "description": "An open-ended neuro-evolution sandbox. No scripts. Only energy, mutation and natural selection.",
+  "type": "module",
+  "private": true,
+  "author": {
+    "name": "Mohammad Emami Fakhr",
+    "url": "https://github.com/mohammademamifakhr-7"
+  },
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/mohammademamifakhr-7/Ahwaz#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohammademamifakhr-7/Ahwaz.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mohammademamifakhr-7/Ahwaz/issues"
+  },
+  "keywords": [
+    "artificial-life",
+    "neuroevolution",
+    "emergence",
+    "evolution-simulator",
+    "canvas2d",
+    "javascript",
+    "simulation",
+    "bacteria",
+    "genetic-algorithm",
+    "closed-energy"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "live-server --port=8080 --open=index.html",
+    "start": "live-server --port=8080 --open=index.html",
+    "serve": "npx --yes http-server . -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
