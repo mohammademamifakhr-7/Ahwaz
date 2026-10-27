@@ -1,6 +1,6 @@
 import { settings, TRAITS, TRAIT_KEYS, TRAIT_BY_KEY } from '../core/config.js';
 import { Brain } from './brain.js';
-import { rand, randInt, randNormal, randPick } from '../core/rng.js';
+import { rand, randInt, randNormal } from '../core/rng.js';
 
 export class Genome {
      constructor(brain, slots, social, bodySize, generation = 0) {
@@ -13,8 +13,6 @@ export class Genome {
 
      static primordial() {
           const slots = [null, null, null, null, null, null];
-          // Founders start with photo (they can extract energy immediately)
-          // and fission (they can reproduce)
           slots[0] = { trait: 'photo', side: null };
           slots[1] = { trait: 'fission', side: null };
           return new Genome(
@@ -69,42 +67,50 @@ export class Genome {
           return spent;
      }
 
+     // NO random removal. Only:
+     //  - add a new trait to an empty slot (if affordable)
+     //  - re-aim a directional trait (free)
      _mutateSlot(i, budget) {
           const s = this.slots[i];
-          const r = rand();
-
-          // Weighted pick by cost — cheaper traits more likely
-          const pickTrait = () => {
-               const affordable = TRAIT_KEYS.filter(k => (TRAITS[k].cost?.initial || 0) <= budget);
-               if (!affordable.length) return null;
-               const weights = affordable.map(k => 1 / (1 + (TRAITS[k].cost?.initial || 0)));
-               const total = weights.reduce((a, b) => a + b, 0);
-               let roll = rand() * total;
-               for (let j = 0; j < affordable.length; j++) {
-                    roll -= weights[j];
-                    if (roll <= 0) return TRAITS[affordable[j]];
-               }
-               return TRAITS[affordable[affordable.length - 1]];
-          };
 
           if (!s) {
-               if (r < 0.6) {
-                    const trait = pickTrait();
-                    if (!trait) return 0;
-                    this.slots[i] = { trait: trait.key, side: trait.side ? randInt(0, 5) : null };
-                    return trait.cost?.initial || 0;
+               const affordable = TRAIT_KEYS.filter(k => {
+                    const c = TRAITS[k].cost;
+                    const init = (c && c.initial) || 0;
+                    return init <= budget;
+               });
+               if (affordable.length === 0) return 0;
+
+               const weights = affordable.map(k => 1 / (1 + ((TRAITS[k].cost.initial) || 0)));
+               const total = weights.reduce((a, b) => a + b, 0);
+               let roll = rand() * total;
+               let picked = affordable[affordable.length - 1];
+               for (let j = 0; j < affordable.length; j++) {
+                    roll -= weights[j];
+                    if (roll <= 0) { picked = affordable[j]; break; }
                }
-          } else if (r < 0.25) {
-               this.slots[i] = null;
-          } else if (r < 0.65) {
-               const trait = pickTrait();
-               if (!trait) return 0;
+               const trait = TRAITS[picked];
                this.slots[i] = { trait: trait.key, side: trait.side ? randInt(0, 5) : null };
-               return trait.cost?.initial || 0;
-          } else if (s.side !== null) {
+               return trait.cost.initial || 0;
+          }
+
+          if (s.side !== null) {
                this.slots[i].side = randInt(0, 5);
           }
           return 0;
+     }
+
+     // Metabolic stress trait loss. Only called by Cell when energy is critical.
+     // Loses the highest-index non-empty slot. Returns maintenance cost freed.
+     shedTraitUnderStress() {
+          let highestIdx = -1;
+          for (let i = 5; i >= 0; i--) {
+               if (this.slots[i]) { highestIdx = i; break; }
+          }
+          if (highestIdx < 0) return 0;
+          const t = TRAIT_BY_KEY[this.slots[highestIdx].trait];
+          this.slots[highestIdx] = null;
+          return (t && t.cost && t.cost.maintenance) || 0;
      }
 
      clone() {

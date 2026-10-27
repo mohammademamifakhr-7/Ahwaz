@@ -5,11 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#080b10">
-  <title>EvoGenesis — Emergent Evolution Sandbox</title>
+  <title>Ahwaz — Emergent Evolution Sandbox</title>
   <meta name="description"
     content="Watch autonomous digital bacteria discover photosynthesis, hunting, cooperation and complex strategies. No scripts, only energy, mutation and natural selection.">
   <meta name="keywords" content="artificial life, evolution simulator, neuroevolution, emergence, biology">
-  <meta property="og:title" content="EvoGenesis — Emergent Evolution Sandbox">
+  <meta property="og:title" content="Ahwaz — Emergent Evolution Sandbox">
   <meta property="og:description"
     content="Autonomous bacteria evolving in a closed-energy world. No scripts. Only survival.">
   <meta property="og:type" content="website">
@@ -37,14 +37,9 @@
         </div>
       </div>
 
-      <button id="btn-fit-screen" class="hud-button hud-button-2" title="Fit to Screen" aria-label="Fit to screen">
+      <button id="btn-fit-screen" class="hud-button" title="Fit world to screen" aria-label="Fit world to screen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4" />
-        </svg>
-      </button>
-      <button id="btn-fullscreen" class="hud-button" title="Fullscreen" aria-label="Toggle fullscreen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
         </svg>
       </button>
 
@@ -72,7 +67,7 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h1>EvoGenesis</h1>
+            <h1>Ahwaz</h1>
             <p class="subtitle">v1.0 · Emergent evolution</p>
           </div>
         </div>
@@ -119,50 +114,67 @@
             <div class="energy-bar-seg seg-corpses" id="energy-bar-corpses"></div>
           </div>
           <div class="energy-legend">
-            <div class="energy-item"><span class="energy-dot dot-pool"></span><span class="energy-name">Pool</span><span
-                class="energy-pct" id="energy-pct-pool">0%</span><span class="energy-abs" id="energy-abs-pool">0</span>
+            <div class="energy-item">
+              <span class="energy-dot dot-pool"></span>
+              <span class="energy-name">Pool</span>
+              <span class="energy-pct" id="energy-pct-pool">0%</span>
+              <span class="energy-abs" id="energy-abs-pool">0</span>
             </div>
-            <div class="energy-item"><span class="energy-dot dot-cells"></span><span
-                class="energy-name">Cells</span><span class="energy-pct" id="energy-pct-cells">0%</span><span
-                class="energy-abs" id="energy-abs-cells">0</span></div>
-            <div class="energy-item"><span class="energy-dot dot-corpses"></span><span
-                class="energy-name">Corpses</span><span class="energy-pct" id="energy-pct-corpses">0%</span><span
-                class="energy-abs" id="energy-abs-corpses">0</span></div>
+            <div class="energy-item">
+              <span class="energy-dot dot-cells"></span>
+              <span class="energy-name">Cells</span>
+              <span class="energy-pct" id="energy-pct-cells">0%</span>
+              <span class="energy-abs" id="energy-abs-cells">0</span>
+            </div>
+            <div class="energy-item">
+              <span class="energy-dot dot-corpses"></span>
+              <span class="energy-name">Corpses</span>
+              <span class="energy-pct" id="energy-pct-corpses">0%</span>
+              <span class="energy-abs" id="energy-abs-corpses">0</span>
+            </div>
           </div>
           <canvas id="chart-canvas" class="chart-canvas"></canvas>
         </section>
 
         <details class="settings-group" open>
-          <summary><span>Life & Energy</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
+          <summary>
+            <span>Life & Energy</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9l6 6 6-6" />
-            </svg></summary>
+            </svg>
+          </summary>
           <div class="sliders" data-group="life"></div>
         </details>
 
         <details class="settings-group">
-          <summary><span>Zones (independent of reset)</span><svg class="chevron" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
+          <summary>
+            <span>Zones (independent of reset)</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9l6 6 6-6" />
-            </svg></summary>
+            </svg>
+          </summary>
           <div class="sliders" data-group="zones"></div>
           <button class="btn btn-outline btn-block" id="btn-regen-zones"
             style="margin: 12px 20px 0; width: calc(100% - 40px);">Regenerate Zones</button>
         </details>
 
         <details class="settings-group">
-          <summary><span>Reproduction</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
+          <summary>
+            <span>Reproduction</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9l6 6 6-6" />
-            </svg></summary>
+            </svg>
+          </summary>
           <div class="sliders" data-group="reproduction"></div>
         </details>
 
         <details class="settings-group">
-          <summary><span>Mutation</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
+          <summary>
+            <span>Mutation</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9l6 6 6-6" />
-            </svg></summary>
+            </svg>
+          </summary>
           <div class="sliders" data-group="mutation"></div>
         </details>
 
@@ -208,7 +220,7 @@
       </div>
 
       <footer class="panel-footer">
-        <span>EvoGenesis v1.0 — closed-economy neuro-evolution</span>
+        <span>Ahwaz v1.0 — closed-economy neuro-evolution</span>
       </footer>
     </aside>
   </div>

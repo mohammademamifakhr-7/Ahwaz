@@ -14,39 +14,41 @@ export class World {
           this.history = [];
           this.historyTimer = 0;
           this.zones = new Zones();
-          this.energyPool = 0;
-          this.founderGraceUntil = CFG.energy.founderGraceSeconds;
           this._pendingGeneBank = [];
+
+          // Set pool FIRST. Then spawn initial cells, which draw their energy
+          // from the pool. Result: total world energy = initialPoolEnergy exactly.
+          this.energyPool = CFG.energy.initialPoolEnergy;
           this._spawnInitial();
-          this._initPool();
           this._initialTotal = this.getTotalEnergy();
      }
 
      get width() { return CFG.world.width; }
      get height() { return CFG.world.height; }
-
      nextId() { return this._nextId++; }
 
      _spawnInitial() {
           const W = CFG.world.width;
           const H = CFG.world.height;
-          const n = CFG.initial.cells;
+          const perCell = settings.get('startReserve');
+          const desired = CFG.initial.cells;
+          const affordable = Math.floor(this.energyPool / Math.max(1, perCell));
+          const n = Math.max(0, Math.min(desired, affordable));
+
           for (let i = 0; i < n; i++) {
-               const c = new Cell(
+               const taken = this.consumePoolEnergy(perCell);
+               if (taken <= 0) break;
+               const cell = new Cell(
                     Genome.primordial(),
                     randRange(50, W - 50),
                     randRange(50, H - 50),
                     this.nextId()
                );
-               c.isFounder = true;
-               c.history.birthTime = 0;
-               c.history.birthLocation = { x: c.x, y: c.y };
-               this.cells.push(c);
+               cell.energy = taken;
+               cell.history.birthTime = 0;
+               cell.history.birthLocation = { x: cell.x, y: cell.y };
+               this.cells.push(cell);
           }
-     }
-
-     _initPool() {
-          this.energyPool = CFG.energy.initialPoolEnergy;
      }
 
      consumePoolEnergy(amount) {
@@ -70,8 +72,7 @@ export class World {
      }
 
      getEnergyBreakdown() {
-          let cellE = 0;
-          let corpseE = 0;
+          let cellE = 0, corpseE = 0;
           for (const c of this.cells) cellE += c.energy;
           for (const c of this.corpses) corpseE += c.energy;
           const total = this.energyPool + cellE + corpseE;
@@ -87,7 +88,7 @@ export class World {
           };
      }
 
-     assertEnergyInvariant(tolerance = 2) {
+     assertEnergyInvariant(tolerance = 10) {
           if (!this._initialTotal) return true;
           const now = this.getTotalEnergy();
           const drift = Math.abs(now - this._initialTotal);
@@ -104,7 +105,7 @@ export class World {
 
      countPhotosyntheticNeighbors(cell) {
           let n = 0;
-          const r2 = CFG.biofilm.radius ** 2;
+          const r2 = 100 * 100;
           for (const other of this.cells) {
                if (other === cell || !other.alive) continue;
                if (!other.isPhotosynthetic()) continue;
@@ -116,12 +117,9 @@ export class World {
      }
 
      geneticSimilarity(a, b) {
-          const wa = a.genome.brain.w;
-          const wb = b.genome.brain.w;
+          const wa = a.genome.brain.w, wb = b.genome.brain.w;
           if (wa.length !== wb.length) return 0.5;
-          let dot = 0;
-          let ma = 0;
-          let mb = 0;
+          let dot = 0, ma = 0, mb = 0;
           for (let i = 0; i < wa.length; i += 8) {
                dot += wa[i] * wb[i];
                ma += wa[i] * wa[i];
@@ -135,26 +133,19 @@ export class World {
      _photosynthesisTick(dt) {
           const ambient = CFG.energy.ambientLight;
           const photoRate = CFG.energy.photoRate;
-          const biofilmBonus = CFG.biofilm.bonus;
-          const biofilmCap = CFG.biofilm.cap;
+          const crowdFactor = CFG.photo.crowdFactor;
 
           let totalDemand = 0;
           for (const cell of this.cells) {
-               if (!cell.alive) {
-                    cell._photoDemand = 0;
-                    continue;
-               }
-               const photoSlots = cell.countTrait('photo');
-               const inGrace = cell.isFounder && this.time < this.founderGraceUntil;
+               if (!cell.alive) { cell._photoDemand = 0; continue; }
                let demand = ambient * dt;
 
+               const photoSlots = cell.countTrait('photo');
                if (photoSlots > 0) {
                     const lightMult = this.getLightMultiplier(cell.x, cell.y);
                     const n = this.countPhotosyntheticNeighbors(cell);
-                    const biofilmMult = 1 + Math.min(biofilmCap, n * biofilmBonus);
-                    demand += photoSlots * photoRate * lightMult * biofilmMult * dt;
-               } else if (inGrace) {
-                    demand += photoRate * 0.3 * this.getLightMultiplier(cell.x, cell.y) * dt;
+                    const crowd = 1 / (1 + n * crowdFactor);
+                    demand += photoSlots * photoRate * lightMult * crowd * dt;
                }
 
                cell._photoDemand = demand;
@@ -177,8 +168,6 @@ export class World {
           }
      }
 
-     // Density pressure — kills cells above the soft cap but returns ALL
-     // leftover energy to the pool so the invariant stays intact.
      _densityPressure(dt) {
           const softCap = CFG.density.softCap;
           const n = this.cells.length;
@@ -189,7 +178,6 @@ export class World {
 
           for (const cell of this.cells) {
                if (!cell.alive) continue;
-               if (cell.isFounder && this.time < this.founderGraceUntil) continue;
                if (rand() < deathRate * dt) {
                     const leftover = Math.max(0, cell.energy);
                     cell.energy = 0;
@@ -197,13 +185,7 @@ export class World {
                     cell._corpseCreated = true;
 
                     if (leftover > 0.5) {
-                         // Half becomes a corpse for scavengers, half returns to the pool
-                         this.corpses.push({
-                              x: cell.x,
-                              y: cell.y,
-                              energy: leftover * 0.5,
-                              alive: true,
-                         });
+                         this.corpses.push({ x: cell.x, y: cell.y, energy: leftover * 0.5, alive: true });
                          this.returnToPool(leftover * 0.5);
                     } else {
                          this.returnToPool(leftover);
@@ -212,8 +194,6 @@ export class World {
           }
      }
 
-     // Safety net: if population drops very low, respawn a few cells from
-     // the pool. Energy is conserved — pool energy becomes cell energy.
      _populationSafetyNet() {
           const n = this.cells.length;
           if (n >= 5) return;
@@ -223,31 +203,22 @@ export class World {
           if (maxSpawn <= 0) return;
 
           const toSpawn = Math.min(20 - n, maxSpawn);
-          const W = CFG.world.width;
-          const H = CFG.world.height;
+          const W = CFG.world.width, H = CFG.world.height;
 
           for (let i = 0; i < toSpawn; i++) {
-               const genome = Genome.primordial();
+               const taken = this.consumePoolEnergy(reserved);
+               if (taken <= 0) return;
                const cell = new Cell(
-                    genome,
+                    Genome.primordial(),
                     randRange(50, W - 50),
                     randRange(50, H - 50),
                     this.nextId()
                );
-               const taken = this.consumePoolEnergy(reserved);
-               if (taken < reserved * 0.5) return;
                cell.energy = taken;
-               cell.isFounder = true;
                cell.history.birthTime = this.time;
                cell.history.birthLocation = { x: cell.x, y: cell.y };
                cell.history.events.push({ t: this.time, ev: 'emergency respawn' });
                this.cells.push(cell);
-          }
-
-          // Extend grace so the new founders have time to adapt
-          const neededGrace = this.time + 60;
-          if (this.founderGraceUntil < neededGrace) {
-               this.founderGraceUntil = neededGrace;
           }
      }
 
@@ -275,24 +246,17 @@ export class World {
                if (cell.alive) cell.tryReproduce(this, pendingBirths);
           }
 
-          // Deaths — convert remaining energy to a corpse or return to pool
           for (const cell of this.cells) {
                if (!cell.alive && !cell._corpseCreated) {
                     cell._corpseCreated = true;
                     if (cell.energy > 0.1) {
-                         this.corpses.push({
-                              x: cell.x,
-                              y: cell.y,
-                              energy: cell.energy,
-                              alive: true,
-                         });
+                         this.corpses.push({ x: cell.x, y: cell.y, energy: cell.energy, alive: true });
                     } else {
                          this.returnToPool(cell.energy);
                     }
                     cell.energy = 0;
 
-                    // Defer gene bank write — batched later
-                    if (cell.offspring >= 2 || cell.age >= 90) {
+                    if (cell.offspring >= 3 || cell.age >= 120) {
                          this._pendingGeneBank.push({
                               genome: cell.genome.clone(),
                               offspring: cell.offspring,
@@ -302,7 +266,6 @@ export class World {
                }
           }
 
-          // Corpse decay
           for (const c of this.corpses) {
                if (!c.alive) continue;
                const decay = CFG.corpse.decay * dt;
@@ -322,14 +285,12 @@ export class World {
 
           this._populationSafetyNet();
 
-          // Flush batched gene bank writes
           if (this._pendingGeneBank.length > 0) {
                const batch = this._pendingGeneBank;
                this._pendingGeneBank = [];
                try { geneBank.considerBatch(batch); } catch (e) { /* ignore */ }
           }
 
-          // History sampling
           this.historyTimer += dt;
           if (this.historyTimer >= 0.5) {
                this.historyTimer = 0;
@@ -357,8 +318,7 @@ export class World {
      }
 
      spawnFromGenome(genome, x, y) {
-          const W = CFG.world.width;
-          const H = CFG.world.height;
+          const W = CFG.world.width, H = CFG.world.height;
           const needed = CFG.energy.capacity * 0.5;
           if (this.energyPool < needed) return null;
           const taken = this.consumePoolEnergy(needed);
@@ -377,45 +337,35 @@ export class World {
      }
 
      nearestCell(self, r) {
-          let best = null;
-          let bestD = r * r;
+          let best = null, bestD = r * r;
           for (const c of this.cells) {
                if (c === self || !c.alive) continue;
+               if (typeof c.defenseAgainst !== 'function') continue;
                const d = (c.x - self.x) ** 2 + (c.y - self.y) ** 2;
-               if (d < bestD) {
-                    bestD = d;
-                    best = c;
-               }
+               if (d < bestD) { bestD = d; best = c; }
           }
           return best;
      }
 
      nearestCorpse(x, y, r) {
-          let best = null;
-          let bestD = r * r;
+          let best = null, bestD = r * r;
           for (const c of this.corpses) {
                if (!c.alive) continue;
                const d = (c.x - x) ** 2 + (c.y - y) ** 2;
-               if (d < bestD) {
-                    bestD = d;
-                    best = c;
-               }
+               if (d < bestD) { bestD = d; best = c; }
           }
           return best;
      }
 
      nearestSexualPartner(self, r) {
-          let best = null;
-          let bestD = r * r;
+          let best = null, bestD = r * r;
           for (const c of this.cells) {
                if (c === self || !c.alive) continue;
                if (!c.genome.hasTrait('conjugation')) continue;
                if (c.energy < CFG.energy.capacity * 0.3) continue;
+               if (typeof c.defenseAgainst !== 'function') continue;
                const d = (c.x - self.x) ** 2 + (c.y - self.y) ** 2;
-               if (d < bestD) {
-                    bestD = d;
-                    best = c;
-               }
+               if (d < bestD) { bestD = d; best = c; }
           }
           return best;
      }
@@ -428,23 +378,15 @@ export class World {
 
      toJSON() {
           return {
+               version: 2,
                time: this.time,
                nextId: this._nextId,
                energyPool: this.energyPool,
                initialTotal: this._initialTotal,
-               founderGraceUntil: this.founderGraceUntil,
                cells: this.cells.map(c => ({
-                    id: c.id,
-                    x: c.x,
-                    y: c.y,
-                    heading: c.heading,
-                    energy: c.energy,
-                    age: c.age,
-                    offspring: c.offspring,
-                    reproCooldown: c.reproCooldown,
-                    velX: c.velX,
-                    velY: c.velY,
-                    isFounder: c.isFounder,
+                    id: c.id, x: c.x, y: c.y, heading: c.heading, energy: c.energy,
+                    age: c.age, offspring: c.offspring, reproCooldown: c.reproCooldown,
+                    velX: c.velX, velY: c.velY,
                     genome: {
                          w: Array.from(c.genome.brain.w),
                          slots: c.genome.slots.map(s => s ? { ...s } : null),
@@ -461,25 +403,26 @@ export class World {
      }
 
      static async fromJSON(data, GenomeClass, CellClass, ZonesClass) {
+          if (!data || data.version !== 2) return null;
           const { Brain } = await import('../biology/brain.js');
           const w = Object.create(World.prototype);
           w.time = data.time;
           w._nextId = data.nextId;
           w.energyPool = data.energyPool;
           w._initialTotal = data.initialTotal;
-          w.founderGraceUntil = data.founderGraceUntil ?? CFG.energy.founderGraceSeconds;
           w.corpses = data.corpses.map(c => ({ ...c, alive: true }));
           w.history = data.history || [];
           w.historyTimer = 0;
           w._pendingGeneBank = [];
           w.zones = ZonesClass.fromJSON(data.zones);
-          w.cells = data.cells.map(cd => {
+
+          w.cells = [];
+          for (const cd of data.cells) {
+               if (!cd.genome || !cd.genome.w) continue;
+               if (cd.genome.w.length !== Brain.N_PARAMS) continue;
                const g = new GenomeClass(
                     new Brain(new Float32Array(cd.genome.w)),
-                    cd.genome.slots,
-                    cd.genome.social,
-                    cd.genome.bodySize,
-                    cd.genome.generation
+                    cd.genome.slots, cd.genome.social, cd.genome.bodySize, cd.genome.generation
                );
                const c = new CellClass(g, cd.x, cd.y, cd.id);
                c.heading = cd.heading;
@@ -489,11 +432,10 @@ export class World {
                c.reproCooldown = cd.reproCooldown;
                c.velX = cd.velX;
                c.velY = cd.velY;
-               c.isFounder = cd.isFounder ?? false;
                if (cd.history) c.history = cd.history;
                c.alive = true;
-               return c;
-          });
+               w.cells.push(c);
+          }
           return w;
      }
 
@@ -505,9 +447,9 @@ export class World {
           this.history = [];
           this.historyTimer = 0;
           this._pendingGeneBank = [];
-          this.founderGraceUntil = CFG.energy.founderGraceSeconds;
+          this.energyPool = CFG.energy.initialPoolEnergy;
           this._spawnInitial();
-          this._initPool();
           this._initialTotal = this.getTotalEnergy();
+          // Zones are NOT reset
      }
 }

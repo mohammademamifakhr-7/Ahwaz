@@ -131,10 +131,6 @@ body {
   box-shadow: var(--shadow);
 }
 
-.hud-button-2 {
-  right: 62px;
-}
-
 .hud-button:hover {
   background: var(--teal-glow);
   border-color: var(--teal);
@@ -828,7 +824,7 @@ body {
   display: none !important;
 }
 
-/* ============ TABLET ============ */
+/* Tablet */
 @media (max-width: 1024px) {
   #panel {
     width: 360px;
@@ -836,7 +832,7 @@ body {
   }
 }
 
-/* ============ MOBILE ============ */
+/* Mobile */
 @media (max-width: 768px) {
   #app {
     flex-direction: column;
@@ -954,10 +950,6 @@ body {
     height: 34px;
     top: 8px;
     right: 8px;
-  }
-
-  .hud-button-2 {
-    right: 50px;
   }
 
   .hud-button svg {

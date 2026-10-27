@@ -1,7 +1,7 @@
 import { hashFloatArray, safeNum } from '../core/utils.js';
 
 const LETTERS = 'ABCDEFGHJKLMNPQR';
-const N = 626;   // new brain param count (24*20 + 20 + 20*6 + 6)
+const N = 624;
 const MAX_RADIUS = 500;
 
 let projA = null, projB = null;

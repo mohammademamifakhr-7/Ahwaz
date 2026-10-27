@@ -1,19 +1,18 @@
 export class Settings {
-     static STORAGE_KEY = 'evogenesis.settings.v7';
+     static STORAGE_KEY = 'evogenesis.settings.v8';
 
      constructor() {
           this.defaults = {
                initialPop: 100,
                maxPop: 500,
                energyCapacity: 200,
-               startReserve: 100,
-               baseCost: 0.08,
-               brainCostPerNeuron: 0.005,
+               startReserve: 180,
+               baseCost: 0.05,
+               brainCostPerNeuron: 0.001,
                moveCostFactor: 0.015,
-               ambientLight: 0.02,
-               photoRate: 0.6,
-               initialPoolEnergy: 30000,
-               founderGraceSeconds: 120,
+               ambientLight: 0.01,
+               photoRate: 0.4,
+               initialPoolEnergy: 50000,
 
                waterCount: 3,
                waterMinRadius: 150,
@@ -28,33 +27,26 @@ export class Settings {
                slowSpeedMult: 0.4,
                lightZoneMult: 5.0,
 
-               reproThreshold: 0.7,
+               reproThreshold: 0.6,
                reproChildShare: 0.45,
                reproParentShare: 0.45,
-               reproCooldown: 20,
-               reproMinAge: 20,
-               traitBudgetFraction: 0.6,
+               reproCooldown: 10,
+               reproMinAge: 15,
+               traitBudgetFraction: 0.5,
 
                corpseDecay: 0.15,
-               corpseMinEnergy: 0,
 
                mutationRate: 0.08,
-               mutationResetProb: 0.002,
-               slotMutationProb: 0.06,
+               mutationResetProb: 0.003,
+               slotMutationProb: 0.12,
                bodyMutationRate: 0.15,
                socialMutationRate: 0.05,
 
-               combatBaseCost: 0.8,
-
-               // Anti-blowup
                densitySoftCap: 250,
                densityDeathRate: 0.015,
                densityRadius: 60,
 
-               // Biofilm
-               biofilmBonus: 0.05,
-               biofilmRadius: 80,
-               biofilmCap: 0.5,
+               photoCrowdFactor: 0.2,
 
                tickHz: 20,
           };
@@ -116,12 +108,8 @@ export const CFG = {
           get ambientLight() { return settings.get('ambientLight'); },
           get photoRate() { return settings.get('photoRate'); },
           get initialPoolEnergy() { return settings.get('initialPoolEnergy'); },
-          get founderGraceSeconds() { return settings.get('founderGraceSeconds'); },
      },
-     corpse: {
-          get decay() { return settings.get('corpseDecay'); },
-          get minEnergy() { return settings.get('corpseMinEnergy'); },
-     },
+     corpse: { get decay() { return settings.get('corpseDecay'); } },
      zones: {
           get waterCount() { return settings.get('waterCount'); },
           get waterMinRadius() { return settings.get('waterMinRadius'); },
@@ -137,40 +125,117 @@ export const CFG = {
           get slowSpeedMult() { return settings.get('slowSpeedMult'); },
           get lightZoneMult() { return settings.get('lightZoneMult'); },
      },
-     combat: { get baseCost() { return settings.get('combatBaseCost'); } },
      sim: { get tickHz() { return settings.get('tickHz'); }, get maxPop() { return settings.get('maxPop'); } },
      density: {
           get softCap() { return settings.get('densitySoftCap'); },
           get deathRate() { return settings.get('densityDeathRate'); },
           get radius() { return settings.get('densityRadius'); },
      },
-     biofilm: {
-          get bonus() { return settings.get('biofilmBonus'); },
-          get radius() { return settings.get('biofilmRadius'); },
-          get cap() { return settings.get('biofilmCap'); },
+     photo: {
+          get crowdFactor() { return settings.get('photoCrowdFactor'); },
      },
 };
 
+// ============================================================
+// Traits — every trait has BOTH an initial cost AND maintenance
+// ============================================================
+
 export const TRAITS = {
-     PHOTO: { key: 'photo', label: 'Photosynthesis', cost: { initial: 25 }, side: false, color: '#22c55e', category: 'feed', effect: 'Extracts energy from pool × light' },
-     STOMACH: { key: 'stomach', label: 'Stomach', cost: { initial: 20 }, side: false, color: '#f97316', category: 'feed', effect: 'Auto-eats corpses on contact' },
-     HUNT: { key: 'hunt', label: 'Hunt', cost: { initial: 30 }, side: false, color: '#ef4444', category: 'feed', effect: 'Drains energy from smaller cells' },
+     // --- Feeding ---
+     PHOTO: {
+          key: 'photo', label: 'Photosynthesis',
+          cost: { initial: 20, maintenance: 0.03 },
+          side: false, color: '#22c55e', category: 'feed',
+          effect: 'Extracts energy from pool × light. Crowding reduces yield.',
+     },
+     STOMACH: {
+          key: 'stomach', label: 'Stomach',
+          cost: { initial: 15, maintenance: 0.02 },
+          side: false, color: '#f97316', category: 'feed',
+          effect: 'Auto-eats corpses on contact.',
+     },
+     HUNT: {
+          key: 'hunt', label: 'Hunt',
+          cost: { initial: 25, maintenance: 0.03 },
+          side: false, color: '#ef4444', category: 'feed',
+          effect: 'Auto-drains energy from smaller cells on contact.',
+     },
 
-     EYE: { key: 'eye', label: 'Eye', cost: { initial: 15 }, side: false, color: '#a855f7', category: 'sense', effect: 'Vision radius 150 → 250' },
-     CHEMO: { key: 'chemo', label: 'Chemotaxis', cost: { initial: 12 }, side: false, color: '#8b5cf6', category: 'sense', effect: 'Sense corpses up to 400px' },
+     // --- Sensing ---
+     EYE: {
+          key: 'eye', label: 'Eye',
+          cost: { initial: 15, maintenance: 0.01 },
+          side: false, color: '#a855f7', category: 'sense',
+          effect: 'Vision radius 150 → 250.',
+     },
+     CHEMO: {
+          key: 'chemo', label: 'Chemotaxis',
+          cost: { initial: 12, maintenance: 0.01 },
+          side: false, color: '#8b5cf6', category: 'sense',
+          effect: 'Senses corpses up to 400 px.',
+     },
 
-     FLAGELLUM: { key: 'flagellum', label: 'Flagellum', cost: { initial: 20 }, side: false, color: '#38bdf8', category: 'move', effect: 'Base speed +50%' },
-     JET: { key: 'jet', label: 'Jet', cost: { initial: 25 }, side: false, color: '#0ea5e9', category: 'move', effect: 'Burst speed ×2 (high cost)' },
+     // --- Movement ---
+     FLAGELLUM: {
+          key: 'flagellum', label: 'Flagellum',
+          cost: { initial: 20, maintenance: 0.02 },
+          side: false, color: '#38bdf8', category: 'move',
+          effect: 'Base speed +50%.',
+     },
+     JET: {
+          key: 'jet', label: 'Jet',
+          cost: { initial: 25, maintenance: 0.005, use: 0.3 },
+          side: false, color: '#0ea5e9', category: 'move',
+          effect: 'Burst speed ×2 at ×3 metabolic cost.',
+     },
 
-     SHIELD: { key: 'shield', label: 'Shield', cost: { maintenance: 0.03 }, side: true, color: '#dc2626', category: 'defend', effect: '-70% damage taken (directional)' },
-     THORN: { key: 'thorn', label: 'Thorn', cost: { maintenance: 0.03 }, side: true, color: '#b91c1c', category: 'defend', effect: 'Attacker loses 30% energy (directional)' },
-     CAMO: { key: 'camo', label: 'Camouflage', cost: { maintenance: 0.05 }, side: false, color: '#78716c', category: 'defend', effect: 'Detection radius -40%' },
+     // --- Defense ---
+     SHIELD: {
+          key: 'shield', label: 'Shield',
+          cost: { initial: 20, maintenance: 0.02 },
+          side: true, color: '#dc2626', category: 'defend',
+          effect: '−70% damage taken (directional).',
+     },
+     THORN: {
+          key: 'thorn', label: 'Thorn',
+          cost: { initial: 20, maintenance: 0.02 },
+          side: true, color: '#b91c1c', category: 'defend',
+          effect: 'Attacker loses 30% of its energy (directional).',
+     },
+     CAMO: {
+          key: 'camo', label: 'Camouflage',
+          cost: { initial: 15, maintenance: 0.015 },
+          side: false, color: '#78716c', category: 'defend',
+          effect: 'Detection radius −40%.',
+     },
 
-     FISSION: { key: 'fission', label: 'Fission', cost: { initial: 15 }, side: false, color: '#ec4899', category: 'repro', effect: 'Binary fission (1 → 2 cells)' },
-     CONJUGATION: { key: 'conjugation', label: 'Conjugation', cost: { initial: 25 }, side: false, color: '#f43f5e', category: 'repro', effect: 'Sexual (needs partner)' },
+     // --- Reproduction ---
+     FISSION: {
+          key: 'fission', label: 'Fission',
+          cost: { initial: 10, maintenance: 0.008 },
+          side: false, color: '#ec4899', category: 'repro',
+          effect: 'Binary fission: 1 cell → 2 cells.',
+     },
+     CONJUGATION: {
+          key: 'conjugation', label: 'Conjugation',
+          cost: { initial: 20, maintenance: 0.015 },
+          side: false, color: '#f43f5e', category: 'repro',
+          effect: 'Sexual reproduction (needs partner).',
+     },
 
-     WATER_ADAPT: { key: 'water_adapt', label: 'Water Adapt', cost: { initial: 12 }, side: false, color: '#06b6d4', category: 'env', effect: 'Water cost -30%' },
-     THERMO: { key: 'thermo', label: 'Thermophile', cost: { initial: 15 }, side: false, color: '#facc15', category: 'env', effect: 'In light: speed +30%' },
+     // --- Environmental ---
+     WATER_ADAPT: {
+          key: 'water_adapt', label: 'Water Adapt',
+          cost: { initial: 12, maintenance: 0.008 },
+          side: false, color: '#06b6d4', category: 'env',
+          effect: '−30% metabolic cost in water zones.',
+     },
+     THERMO: {
+          key: 'thermo', label: 'Thermophile',
+          cost: { initial: 12, maintenance: 0.008 },
+          side: false, color: '#facc15', category: 'env',
+          effect: '+30% speed inside the light zone.',
+     },
 };
 
 export const TRAIT_KEYS = Object.keys(TRAITS);
@@ -181,12 +246,11 @@ export const SETTINGS_DEF = {
           label: 'Life & Energy',
           items: [
                { key: 'initialPop', label: 'Initial population', min: 20, max: 300, step: 10, fmt: v => v.toFixed(0) },
-               { key: 'baseCost', label: 'Base metabolism', min: 0.02, max: 0.2, step: 0.01, fmt: v => v.toFixed(2) },
-               { key: 'moveCostFactor', label: 'Move cost', min: 0.005, max: 0.05, step: 0.005, fmt: v => v.toFixed(3) },
-               { key: 'photoRate', label: 'Photo extraction', min: 0.1, max: 1.5, step: 0.05, fmt: v => v.toFixed(2) },
+               { key: 'baseCost', label: 'Base metabolism', min: 0.01, max: 0.2, step: 0.005, fmt: v => v.toFixed(3) },
+               { key: 'photoRate', label: 'Photo extraction', min: 0.1, max: 1.0, step: 0.05, fmt: v => v.toFixed(2) },
                { key: 'ambientLight', label: 'Ambient trickle', min: 0, max: 0.1, step: 0.005, fmt: v => v.toFixed(3) },
-               { key: 'founderGraceSeconds', label: 'Grace period (s)', min: 0, max: 600, step: 10, fmt: v => v.toFixed(0) },
-               { key: 'initialPoolEnergy', label: 'Pool energy', min: 10000, max: 100000, step: 5000, fmt: v => (v / 1000).toFixed(0) + 'k' },
+               { key: 'photoCrowdFactor', label: 'Photo crowding', min: 0.05, max: 1.0, step: 0.05, fmt: v => v.toFixed(2) },
+               { key: 'initialPoolEnergy', label: 'Pool energy', min: 10000, max: 200000, step: 5000, fmt: v => (v / 1000).toFixed(0) + 'k' },
                { key: 'corpseDecay', label: 'Corpse decay', min: 0.01, max: 1.0, step: 0.01, fmt: v => v.toFixed(2) },
           ],
      },
@@ -194,9 +258,6 @@ export const SETTINGS_DEF = {
           label: 'Zones',
           items: [
                { key: 'waterCount', label: 'Water zones', min: 0, max: 8, step: 1, fmt: v => v.toFixed(0) },
-               { key: 'waterMinRadius', label: 'Water min', min: 50, max: 300, step: 10, fmt: v => v.toFixed(0) },
-               { key: 'waterMaxRadius', label: 'Water max', min: 100, max: 500, step: 10, fmt: v => v.toFixed(0) },
-               { key: 'slowCount', label: 'Slow zones', min: 0, max: 6, step: 1, fmt: v => v.toFixed(0) },
                { key: 'lightRadius', label: 'Light radius', min: 100, max: 500, step: 10, fmt: v => v.toFixed(0) },
                { key: 'lightSpeed', label: 'Light speed', min: 0.1, max: 3.0, step: 0.1, fmt: v => v.toFixed(1) },
                { key: 'lightZoneMult', label: 'Light ×', min: 1, max: 10, step: 0.5, fmt: v => v.toFixed(1) },
@@ -221,7 +282,6 @@ export const SETTINGS_DEF = {
                { key: 'slotMutationProb', label: 'Slot mutation', min: 0, max: 0.3, step: 0.01, fmt: v => v.toFixed(2) },
                { key: 'bodyMutationRate', label: 'Body σ', min: 0, max: 0.5, step: 0.01, fmt: v => v.toFixed(2) },
                { key: 'socialMutationRate', label: 'Social σ', min: 0, max: 0.3, step: 0.01, fmt: v => v.toFixed(2) },
-               { key: 'mutationResetProb', label: 'Weight reset', min: 0, max: 0.01, step: 0.001, fmt: v => v.toFixed(3) },
           ],
      },
 };

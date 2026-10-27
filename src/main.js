@@ -86,25 +86,7 @@ worldCanvas.addEventListener('pointerup', (e) => {
      }
 });
 
-// Fullscreen + Fit
-const fsBtn = document.getElementById('btn-fullscreen');
-if (fsBtn) {
-     fsBtn.onclick = () => {
-          if (!document.fullscreenElement) {
-               document.documentElement.requestFullscreen?.().catch(() => { });
-          } else {
-               document.exitFullscreen?.().catch(() => { });
-          }
-     };
-}
-
-document.addEventListener('fullscreenchange', () => {
-     requestAnimationFrame(() => {
-          renderer._resize();
-          camera.fitToScreen(true);
-     });
-});
-
+// Fit world to screen (only remaining button, no fullscreen)
 const fitBtn = document.getElementById('btn-fit-screen');
 if (fitBtn) fitBtn.onclick = () => camera.fitToScreen();
 
@@ -116,6 +98,11 @@ if (panelToggle) {
           panelEl.classList.toggle('collapsed');
      };
 }
+
+// Resize handling (fires when the browser window changes size or rotates)
+window.addEventListener('resize', () => {
+     renderer._resize();
+});
 
 // Initial fit
 requestAnimationFrame(() => {

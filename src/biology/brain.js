@@ -2,11 +2,11 @@ import { settings } from '../core/config.js';
 import { randNormal, rand } from '../core/rng.js';
 import { safeNum } from '../core/utils.js';
 
-const IN = 24;
+const IN = 26;
 const HID = 20;
-const OUT = 6;
+const OUT = 4;
 const N_PARAMS = IN * HID + HID + HID * OUT + OUT;
-// 480 + 20 + 120 + 6 = 626
+// 520 + 20 + 80 + 4 = 624
 
 export class Brain {
      static get IN() { return IN; }
@@ -15,8 +15,12 @@ export class Brain {
      static get N_PARAMS() { return N_PARAMS; }
 
      constructor(weights = null) {
-          this.w = weights instanceof Float32Array ? weights : new Float32Array(N_PARAMS);
-          if (!weights) this._randomInit();
+          if (weights instanceof Float32Array && weights.length === N_PARAMS) {
+               this.w = weights;
+          } else {
+               this.w = new Float32Array(N_PARAMS);
+               this._randomInit();
+          }
           this.in = new Float32Array(IN);
           this.hid = new Float32Array(HID);
           this.out = new Float32Array(OUT);
@@ -53,15 +57,15 @@ export class Brain {
                const base = IN * HID + HID + o * HID;
                for (let h = 0; h < HID; h++) sum += this.w[base + h] * this.hid[h];
 
-               // 0 turn (tanh), 1 throttle (sigmoid), 2 aggression (tanh), 3 share (tanh), 4-5 memory (tanh)
+               // Output 1 (throttle) is sigmoid, others are tanh
                if (o === 1) this.out[o] = 1 / (1 + Math.exp(-sum));
                else this.out[o] = Math.tanh(sum);
 
                this.out[o] = safeNum(this.out[o], 0);
           }
 
-          this.mem[0] = this.out[4];
-          this.mem[1] = this.out[5];
+          this.mem[0] = this.out[2];
+          this.mem[1] = this.out[3];
 
           return this.out;
      }
